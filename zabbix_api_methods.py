@@ -37,6 +37,24 @@ def zabbix_find_group(group_name):
         return 0
 
 
+def zabbix_print_all_groups():
+    """
+    Print all groups from zabbix.
+    :return:
+    """
+    try:
+        search_result = zapi.do_request('hostgroup.get')  # Send request to Zabbix
+    except Exception as error:
+        print('Error while searching group:' + str(error))
+        return 0
+    if search_result['result']:
+        print('-' * 40)
+        print('Groups:')
+        for item in search_result['result']:
+            print(item['name'], end=" | ")
+        print()
+
+
 def zabbix_find_template(template_name):
     """
     Find Template ID by Template name.
@@ -64,7 +82,7 @@ def zabbix_find_template(template_name):
 def map_template_names(raw_name):
     """
     Map convinient template name with Zabbix template names. For often used templates only.
-    :param raw_name: name from input
+    :param raw_name: name from input. if it is 'print' - prints all available templates
     :return: name from Zabbix or False if name is not in list
     """
     template_names_map = {
@@ -73,19 +91,26 @@ def map_template_names(raw_name):
         'dlink': 'DLink SNMP Device macro',
         'mikrotik': 'Mikrotik SNMP Device T',
         'qtech': 'QTECH SNMP Device',
-        'cisco asa': 'Cisco ASA',
+        'asa': 'Cisco ASA',
         'moxa': 'Moxa SNMP Device',
         'hp5800': 'HP 58xx SNMP Device',
         'hp5500': 'HP 5500 SNMP Device',
         'hp5120': 'HP 5120 SNMP Device',
         'hp1950': 'HP 1950 SNMP Device',
         'hp1920': 'HP 1920 SNMP Device',
-        'ping loss': 'Ping_Loss'
+        'ping': 'Ping_Loss'
     }
+    if raw_name == 'print':
+        print('-' * 40)
+        print("Templates:")
+        a = sorted(template_names_map.keys())
+        print(' | '.join(a))
+        return False
     if str(raw_name).lower().strip() in template_names_map.keys():
         return template_names_map[str(raw_name).lower().strip()]
     else:
-        print("Name is not in list, use(" + ", ".join(template_names_map.keys()) + ")")
+        print(str(raw_name).lower().strip())
+        print("Template name is not in list, use(" + ", ".join(template_names_map.keys()) + ")")
         return False
 
 
@@ -107,7 +132,7 @@ def zabbix_add_host(hostname, ip_address, group_name, template_name, snmp_commun
     template_id = zabbix_find_template(template_name_mapped)
 
     if not group_id or not template_id:
-        print('Host does not added')
+        print('Invalid Group or Template. Host does not added')
         return False
     print('Adding host...')
     parameters = {
